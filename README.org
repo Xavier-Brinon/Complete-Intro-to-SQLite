@@ -1,0 +1,32 @@
+#+title: Complete intro to SQLite using Node
+#+date: [2025-02-14 Fri]
+#+startup: indent
+#+property: header-args :results output
+
+* 🏷️ Complete-Intro-to-SQLite
+Front End Masters [[https://frontendmasters.com/courses/sqlite/][course]] by Brian Holt.
+
+* Node app
+Since the last version of *Node*, as of today, support TS, I'll just let the IDE
+handle the types and run without transpiling.
+In the root of the folder:
+#+begin_src bash
+  nvm install 23
+  npm init -y
+#+end_src
+
+Some basic settings to begin with:
+- Main entry point is =index.ts=. I write directly in typescript and let *Node*
+  do the stripping. I will probably have to use only a subset of the TS features
+  available.
+- Tests will run with the built in test runner ~node --test~.
+  *Node* will run against any file that ends with =.test.ts=
+
+
+Because Typescript doesn't understand *Node* types, I need to also install them.
+#+name: install node types
+#+begin_src bash
+  npm i -D @types/node
+#+end_src
+* 🔑 Env
+It's all done locally, so no need of handling API Keys of any sort.
