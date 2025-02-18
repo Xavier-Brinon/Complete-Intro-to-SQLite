@@ -1,0 +1,21 @@
+{
+  "name": "complete-intro-to-sqlite",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com-personal:Xavier-Brinon/Complete-Intro-to-SQLite.git"
+  },
+  "keywords": [],
+  "author": "Xavier Brinon",
+  "license": "GPL-3.0-or-later",
+  "description": "Intro to SQLite, from FrontEnd Masters.",
+  "devDependencies": {
+    "@types/node": "^22.13.4"
+  }
+}
