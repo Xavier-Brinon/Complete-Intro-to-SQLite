@@ -30,3 +30,23 @@ Because Typescript doesn't understand *Node* types, I need to also install them.
 #+end_src
 * 🔑 Env
 It's all done locally, so no need of handling API Keys of any sort.
+* Sqlite command sample
+we assume you have the database opened ~sqlite3 ./Chinook_Sqlite.sqlite~.
+** Basic builtin commands
+- .help :: show the builtin commands available
+- .show :: Show the current values for various settings
+- .excel :: Display the output of next command in spreadsheet[fn:1]
+- .fullschema :: Show schema and the content of sqlite_stat tables
+- .schema <pattern> :: Show the CREATE statements matching <pattern>
+- .tables <pattern> :: List names of tables matching LIKE pattern TABLE
+** SQL commands
+#+name: select
+#+begin_src sql
+  select * from Artist
+  select name from artist where artistid = 174;
+  select * from artist where name like '%Postal%'; -- double quotes for column name
+#+end_src
+
+* Footnotes
+
+[fn:1]Depending on your OS, might open Table on Mac, Excel on W$
