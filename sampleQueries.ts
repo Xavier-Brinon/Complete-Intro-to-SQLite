@@ -1,4 +1,4 @@
-import { backup, DatabaseSync } from 'node:sqlite'
+import { DatabaseSync } from 'node:sqlite'
 import { strict as assert } from 'node:assert'
 
 interface IArtist {
@@ -60,15 +60,16 @@ export const addArtist = ({ name }: { name : string }) => {
 
   if (artistsFound.length === 0) {
     const prepCountArtist = chinookDB.prepare('select count(*) from [Artist]')
-    const sizeBeforeLog = prepCountArtist.all()
-    console.log({ sizeBeforeLog })
+    const sizeBeforeLog = prepCountArtist.get() as { 'count(*)': number }
+    const countBefore = sizeBeforeLog['count(*)']
 
     const prepInsert = chinookDB.prepare(`insert into [Artist] (name) values (?)`)
     const insertLog = prepInsert.run(name)
-    console.log({ insertLog })
 
-    const sizeAfter = prepCountArtist.all()
-    console.log({sizeAfter})
+    const sizeAfter = prepCountArtist.get() as { 'count(*)': number }
+    const countAfter = sizeAfter['count(*)']
+
+    console.log({ countBefore, insertLog, countAfter })
   } else {
     console.log(`Artist ${name} found in the table: ${JSON.stringify(artistsFound[0])}`)
   }
