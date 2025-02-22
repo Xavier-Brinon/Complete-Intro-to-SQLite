@@ -37,16 +37,96 @@ we assume you have the database opened ~sqlite3 ./Chinook_Sqlite.sqlite~.
 - .show :: Show the current values for various settings
 - .excel :: Display the output of next command in spreadsheet[fn:1]
 - .fullschema :: Show schema and the content of sqlite_stat tables
-- .schema <pattern> :: Show the CREATE statements matching <pattern>
+- .schema <pattern> :: Show the CREATE statements matching <pattern>[fn:2]
 - .tables <pattern> :: List names of tables matching LIKE pattern TABLE
 ** SQL commands
-#+name: select
-#+begin_src sql
-  select * from Artist
-  select name from artist where artistid = 174;
-  select * from artist where name like '%Postal%'; -- double quotes for column name
+I will write the commands in lower case, and respect the schema for table names
+and column names (i.e. Same case and between brackets: [Artist]).
+There is this rule that says:
+- single quotes for strings
+- double quotes fol column names
+Since I want to use [] for column names, there is simply one rule:
+- no double quotes
+
+#+name: open session
+#+description: open sqlite session with the Chinook database
+#+begin_src bash
+  sqlite3 ./Chinook_Sqlite.sqlite
 #+end_src
 
+#+name: select
+#+begin_src sql
+  select * from [Artist]
+  select name from [Artist] where [ArtistId] = 174;
+  select * from [Artist] where [Name] like '%Postal%';
+  select * from [Artist] order by [Name] desc limit 10;
+  -- pagination
+  select * from [Artist] limit 10; -- page 1
+  select * from [Artist] limit 10 offset 10; -- page 2
+  select * from [Artist] limit 10 offset 20; -- page 3
+#+end_src
+** Node:sqlite commands
+See [[https://nodejs.org/docs/latest/api/sqlite.html#statementallnamedparameters-anonymousparameters][statement.all]] for an example.
+
+The order of execution is:
+1. DatabaseSync with the path to database or ~inMemory~
+2. Prepare a request (or any SQL command) into a ~statement~
+3. Execute the statement, with:
+   - statement.get() :: fetch the first object in the array
+   - statement.iterate() :: returns an iterator
+   - statement.all() :: returns an array
+
+#+name: example of simlpe node:sqlite statement
+#+begin_src javascript
+  import { DatabaseSync } from 'node:sqlite'
+
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
+  const allPostals = chinookDB.prepare('select * from [Artist] where [Name] like \'%Postal%\'')
+  allPostals.all().forEeach(artist => {
+    console.info(artist)
+  })
+#+end_src
+* Insert Commands
+The [Artist] table has the following schema:
+#+name: artist schema
+#+begin_src sql
+  CREATE TABLE [Artist]
+  (
+      [ArtistId] INTEGER  NOT NULL,
+      [Name] NVARCHAR(120),
+      CONSTRAINT [PK_Artist] PRIMARY KEY  ([ArtistId])
+  );
+#+end_src
+The [ArtistId] is generated, so adding a new entry means inserting a new [Name].
+
+#+name: number of entries in [Artist]
+#+begin_src sql
+  select count(*) from [Artist] -- 275
+#+end_src
+
+Let's add *Radiohead* to the table
+#+name: insert Radiohead
+#+begin_src sql
+  insert into [Artist] (name) values ('Radiohead');
+#+end_src
+No feedback in term of successful insertion 🤷🏻.
+
+#+name: list last entries
+#+begin_src sql
+  select * from [Artist] order by [ArtistId] desc limit 5;
+#+end_src
+
+#+begin_src sql
+  276|Radiohead
+  275|Philip Glass Ensemble
+  274|Nash Ensemble
+  273|C. Monteverdi, Nigel Rogers - Chiaroscuro; London Baroque; London Cornett & Sackbu
+  272|Emerson String Quartet
+#+end_src
+
+
 * Footnotes
+[fn:2]It seems there is a convention to put col names and table names
+between square brackets.
 
 [fn:1]Depending on your OS, might open Table on Mac, Excel on W$

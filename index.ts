@@ -1,5 +1,7 @@
 import { helloWorld } from './inMemory.ts'
-import { queries } from './sampleQueries.ts'
+import { addArtist, queries } from './sampleQueries.ts'
 
 helloWorld()
 queries()
+addArtist({ name: 'Radiohead' })
+addArtist({ name: 'DaftPunk' })
