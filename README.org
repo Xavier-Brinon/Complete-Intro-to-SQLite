@@ -103,7 +103,7 @@ The [ArtistId] is generated, so adding a new entry means inserting a new [Name].
 #+begin_src sql
   select count(*) from [Artist] -- 275
 #+end_src
-
+** SQL commands
 Let's add *Radiohead* to the table
 #+name: insert Radiohead
 #+begin_src sql
@@ -124,7 +124,26 @@ No feedback in term of successful insertion 🤷🏻.
   272|Emerson String Quartet
 #+end_src
 
+** Node:sqlite commands
+Does the artist already exist?
+#+name: checking duplicates
+#+begin_src javascript
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
 
+  const prepFindArtist = chinookDB.prepare(`select * from [Artist] where [Name] = ?`)
+  const artistsFound = prepFindArtist.all(name)
+
+  assert.ok(artistsFound.length === 0)
+#+end_src
+
+If not then we can add the entry to the table.
+#+name: add daft punk
+#+begin_src javascript
+  const name = 'DaftPunk'
+  const prepInsert = chinookDB.prepare(`insert into [Artist] (name) values (?)`)
+  const insertLog = prepInsert.run(name)
+  console.log(insertLog)
+#+end_src
 * Footnotes
 [fn:2]It seems there is a convention to put col names and table names
 between square brackets.
