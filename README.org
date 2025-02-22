@@ -225,6 +225,76 @@ Remove a table
 #+begin_src sql
   drop table [BandMember];
 #+end_src
+
+* Relational data & Join
+The Album table has the following schema:
+#+begin_src sql
+  .schema album
+CREATE TABLE [Album]
+(
+    [AlbumId] INTEGER  NOT NULL,
+    [Title] NVARCHAR(160)  NOT NULL,
+    [ArtistId] INTEGER  NOT NULL,
+    CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId]),
+    FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId])
+		ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX [IFK_AlbumArtistId] ON [Album] ([ArtistId]);
+#+end_src
+
+The first few rows look like:
+#+begin_src sql
+  select * from [Album] limit 10;
+1|For Those About To Rock We Salute You|1
+2|Balls to the Wall|2
+3|Restless and Wild|2
+4|Let There Be Rock|1
+5|Big Ones|3
+6|Jagged Little Pill|4
+7|Facelift|5
+8|Warner 25 Anos|6
+9|Plays Metallica By Four Cellos|7
+10|Audioslave|8
+#+end_src
+
+The last number is the [ArtistId], that matches the [Artist] ([ArtistId]).
+To display the [Name] of the artist instead of the ID:
+#+begin_src sql
+  select Album.AlbumId, Album.Title, Artist.Name
+  from [Album] join [Artist] on Album.ArtistId = Artist.ArtistId
+  limit 10;
+1|For Those About To Rock We Salute You|AC/DC
+2|Balls to the Wall|Accept
+3|Restless and Wild|Accept
+4|Let There Be Rock|AC/DC
+5|Big Ones|Aerosmith
+6|Jagged Little Pill|Alanis Morissette
+7|Facelift|Alice In Chains
+8|Warner 25 Anos|Antônio Carlos Jobim
+9|Plays Metallica By Four Cellos|Apocalyptica
+10|Audioslave|Audioslave
+#+end_src
+
+** Table alias
+Typing the name of the albums all the time can be cumbersome.
+There different types of alias:
+#+begin_src sql
+  select Alb.AlbumId, Alb.Title, Art.Name as [artName]
+  from [Album] [Alb] join [Artist] [Art] on Alb.ArtistId = Art.ArtistId
+  where [artName] = 'Nirvana'
+  limit 10;
+163|From The Muddy Banks Of The Wishkah [Live]|Nirvana
+164|Nevermind|Nirvana
+#+end_src
+
+** Multiple join
+#+begin_src sql
+  select art.Name, alb.Title as [Title], trk.Name
+  from [Album] [alb]
+  join [Artist] [art] on art.ArtistId = alb.ArtistId
+  join [Track] [trk]  on trk.AlbumId = alb.AlbumId
+  where [Title] = 'Nevermind';
+#+end_src
 * Footnotes
 [fn:2]It seems there is a convention to put col names and table names
 between square brackets.
