@@ -1,7 +1,8 @@
 import { helloWorld } from './inMemory.ts'
-import { addArtist, queries } from './sampleQueries.ts'
+import { addArtist, deleteArtist, queries, updateArtistName } from './sampleQueries.ts'
 
 helloWorld()
 queries()
 addArtist({ name: 'Radiohead' })
-addArtist({ name: 'DaftPunk' })
+updateArtistName({ from: 'Radiohead', to: 'DaftPunk' })
+deleteArtist({ name: 'DaftPunk_' })
