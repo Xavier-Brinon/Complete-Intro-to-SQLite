@@ -7,7 +7,9 @@ interface IArtist {
 }
 
 export const queries = () => {
-  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite', {
+    readOnly: true
+  })
 
   // const querySelectAll = chinookDB.prepare('select * from [Artist]')
 
@@ -195,5 +197,7 @@ export const addTrack = ({
       bytes ?? 'null',
       unitPrice)
     console.log(addTrackLog)
+
+    chinookDB.close()
   }
 }

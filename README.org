@@ -363,11 +363,11 @@ CREATE TABLE [Track]
     [Bytes] INTEGER,
     [UnitPrice] NUMERIC(10,2)  NOT NULL,
     CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
-    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId]) 
+    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
                 ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId]) 
+    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId])
                 ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId]) 
+    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId])
                 ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
@@ -392,6 +392,25 @@ Looking at the schema, it means to add a new track, you need to ensure that:
 Since we're adding a Track with the AlbumId 9999 that doesn't exist, it fails.
 
 
+** Node:sqlite && foreign keys
+By default SQLite doesn't enforce foreign keys but *Node:sqlite* does.
+See [[https://nodejs.org/docs/latest/api/sqlite.html#new-databasesynclocation-options][DatabaseSync options]]
+#+begin_quote
+~enableForeignKeyConstraints <boolean>~
+If ~true~, foreign key constraints are enabled.
+This is recommended but can be disabled for compatibility with legacy database
+schemas. The enforcement of foreign key constraints can be enabled and disabled
+after opening the database using ~PRAGMA foreign_keys~. Default: ~true~.
+#+end_quote
+
+To disable the foreign key constraints:
+#+begin_src javascript
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite', {
+      enableForeignKeyConstraints: false
+  })
+  // To enable it after opening the database:
+const prep = chinookDB.prepare('PRAGMA foreign_keys = ON')
+#+end_src
 * Footnotes
 
 [fn:3]At least for now.
