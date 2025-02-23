@@ -122,3 +122,78 @@ export const deleteArtist = ({ name }: { name: string }) => {
   console.log(deleteLog)
   chinookDB.close()
 }
+
+/**
+ * CREATE TABLE [Track]
+ * (
+ *   [TrackId] INTEGER  NOT NULL,
+ *   [Name] NVARCHAR(200)  NOT NULL,
+ *   [AlbumId] INTEGER,
+ *   [MediaTypeId] INTEGER  NOT NULL,
+ *   [GenreId] INTEGER,
+ *   [Composer] NVARCHAR(220),
+ *   [Milliseconds] INTEGER  NOT NULL,
+ *   [Bytes] INTEGER,
+ *   [UnitPrice] NUMERIC(10,2)  NOT NULL,
+ *   CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
+ *   FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
+ *               ON DELETE NO ACTION ON UPDATE NO ACTION,
+ *   FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId])
+ *               ON DELETE NO ACTION ON UPDATE NO ACTION,
+ *   FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId])
+ *               ON DELETE NO ACTION ON UPDATE NO ACTION
+ * );
+ * CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
+ * CREATE INDEX [IFK_TrackGenreId] ON [Track] ([GenreId]);
+ * CREATE INDEX [IFK_TrackMediaTypeId] ON [Track] ([MediaTypeId]);
+ */
+
+interface ITrack {
+  name: string
+  albumId?: number
+  mediaTypeId: number
+  genreId?: number
+  composer?: string
+  milliseconds: number
+  bytes?: number
+  unitPrice: number
+}
+export const addTrack = ({
+  name,
+  albumId,
+  mediaTypeId,
+  genreId,
+  composer,
+  milliseconds,
+  bytes,
+  unitPrice
+}: ITrack = {} as ITrack) => {
+  assert.ok(typeof name === 'string', `The name should be a string, got ${typeof name}`)
+  assert.ok(0 < name.length && name.length <= 200, `The table expect name to be max 200 chars, got ${name.length}`)
+  assert.ok(typeof albumId === 'number' || albumId === undefined, `The albumId should be a number, got ${typeof albumId}`)
+  assert.ok(typeof mediaTypeId === 'number', `The mediaTypeId should be a number, got ${typeof mediaTypeId}`)
+  assert.ok(typeof genreId === 'number' || genreId === undefined, `The genreId should be a number, got ${typeof genreId}`)
+  assert.ok(typeof composer === 'string' || composer === undefined, `The composer should be a string, got ${typeof composer}`)
+  assert.ok(
+    composer === undefined || 0 < composer.length && composer.length <= 220,
+    `The table expect composer to be max 220 chars, got ${composer?.length ?? 0}`
+  )
+  assert.ok(typeof milliseconds === 'number', `The milliseconds should be a number, got ${typeof milliseconds}`)
+  assert.ok(typeof bytes === 'number' || bytes === undefined, `The bytes should be a number, got ${typeof bytes}`)
+  assert.ok(typeof unitPrice === 'number', `The unitPrice should be a number, got ${typeof unitPrice}`)
+
+  if (name && mediaTypeId && milliseconds && unitPrice) {
+    const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
+    const prepAddTrack = chinookDB.prepare('insert into [Track] ([Name], [AlbumId], [MediaTypeId], [GenreId], [Composer], [Milliseconds], [Bytes], [UnitPrice]) values (?, ?, ?, ?, ?, ?, ?, ?) returning *')
+    const addTrackLog = prepAddTrack.all(
+      name,
+      albumId ?? 'null',
+      mediaTypeId,
+      genreId ?? 'null',
+      composer ?? 'null',
+      milliseconds,
+      bytes ?? 'null',
+      unitPrice)
+    console.log(addTrackLog)
+  }
+}

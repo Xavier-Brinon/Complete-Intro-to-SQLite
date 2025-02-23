@@ -295,7 +295,106 @@ There different types of alias:
   join [Track] [trk]  on trk.AlbumId = alb.AlbumId
   where [Title] = 'Nevermind';
 #+end_src
+
+By default this is an *Inner Join*.
+- Inner Join :: Include only if this is in both
+- Left :: All of *From* table
+- Right :: All of the *Join* table
+  # You probably don't want to use that one 👇🏻
+- Full Outer :: Include all records no matter
+
+*Snow Patrol*:
+- has a record in the [Artist] table but
+- not in the [Album] table
+
+#+begin_src sql
+  select * from [Artist] where [Name] = 'Snow Patrol';
+172|Snow Patrol
+  select * from [Album] where [ArtistId] = 172;
+  -- null
+#+end_src
+
+With *INNER JOIN*:
+#+begin_src sql
+  select art.Name as [Name], alb.Title
+  from [Album] [alb]
+  inner join [Artist] [art]
+    on art.ArtistId = alb.ArtistId
+  where [Name] = 'Snow Patrol';
+  -- null
+#+end_src
+
+Same but *RIGHT JOIN*:
+#+begin_src sql
+  select art.Name as [Name], alb.Title
+  from [Album] [alb]
+  right join [Artist] [art] -- Right Outer Join
+    on art.ArtistId = alb.ArtistId
+  where [Name] = 'Snow Patrol';
+Snow Patrol|                    -- There is an art.Name but no alb.Title
+#+end_src
+
+List all the artists that do not have an album:
+#+begin_src sql
+  select art.Name, alb.Title
+  from [Artist] [art]
+  left outer join [Album] [alb]
+    on alb.ArtistId = art.ArtistId
+  where alb.ArtistId is null;
+#+end_src
+
+
+* Foreign Keys
+They're not enforced by default[fn:3]
+See [[https://www.sqlite.org/foreignkeys.html][SQLite Foreign Key Support]].
+
+Enforce foreign key constraint by typing ~sqlite> pragma foreign_keys = on~
+#+begin_src sql
+  .schema Track
+CREATE TABLE [Track]
+(
+    [TrackId] INTEGER  NOT NULL,
+    [Name] NVARCHAR(200)  NOT NULL,
+    [AlbumId] INTEGER,
+    [MediaTypeId] INTEGER  NOT NULL,
+    [GenreId] INTEGER,
+    [Composer] NVARCHAR(220),
+    [Milliseconds] INTEGER  NOT NULL,
+    [Bytes] INTEGER,
+    [UnitPrice] NUMERIC(10,2)  NOT NULL,
+    CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
+    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId]) 
+                ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId]) 
+                ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId]) 
+                ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
+CREATE INDEX [IFK_TrackGenreId] ON [Track] ([GenreId]);
+CREATE INDEX [IFK_TrackMediaTypeId] ON [Track] ([MediaTypeId]);
+
+  pragma foreign_keys = on;
+  insert into [Track] ([Name], [AlbumId], [MediaTypeId], [GenreId], [Composer], [Milliseconds], [Bytes], [UnitPrice])
+  values ('lol', 9999, 9999, 9999, 9999, 9999, 9999, 9999);
+Runtime error: FOREIGN KEY constraint failed (19)
+#+end_src
+
+*AlbumId* is a foreign key
+#+begin_src sql
+FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
+            ON DELETE NO ACTION ON UPDATE NO ACTION,
+#+end_src
+Looking at the schema, it means to add a new track, you need to ensure that:
+- the [AlbumId] value matches an existing [Album] ([AlbumId])
+- the [GenreId] value matches an existing [Genre] ([GenreId])
+- the [MediaTypeId] value matches an existing [MediaType] ([MediaTypeId])
+Since we're adding a Track with the AlbumId 9999 that doesn't exist, it fails.
+
+
 * Footnotes
+
+[fn:3]At least for now.
 [fn:2]It seems there is a convention to put col names and table names
 between square brackets.
 
