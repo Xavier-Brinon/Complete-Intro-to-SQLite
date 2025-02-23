@@ -481,7 +481,24 @@ Rock And Roll|12
 Opera|1
 #+end_src
 
+** TODO Having[fn:4]
+It's ~WHERE~ once the aggregation happened. You cannot refer to any aggregated
+value in the ~WHERE~ clause.
+#+begin_src sql
+sqlite> select Track.GenreId, Genre.Name, count(Track.GenreId) as [Count]
+   ...> from [Track]
+   ...> join [Genre] on Genre.GenreId = Track.GenreId
+   ...> group by Track.GenreId
+   ...> Having [Count] > 300;
+1|Rock|1297
+3|Metal|374
+4|Alternative & Punk|332
+7|Latin|579
+#+end_src
 * Footnotes
+[fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
+I'm only interrested in the *Building an app feature* and don't need to
+do a full review of SQL statements building blocks.
 
 [fn:3]At least for now.
 [fn:2]It seems there is a convention to put col names and table names
