@@ -101,22 +101,20 @@ The [ArtistId] is generated, so adding a new entry means inserting a new [Name].
 
 #+name: number of entries in [Artist]
 #+begin_src sql
-  select count(*) from [Artist] -- 275
+  sqlite> select count(*) from [Artist]
+  275
 #+end_src
 ** SQL commands
 Let's add *Radiohead* to the table
 #+name: insert Radiohead
 #+begin_src sql
-  insert into [Artist] (name) values ('Radiohead');
+sqlite> insert into [Artist] (name) values ('Radiohead');
 #+end_src
 No feedback in term of successful insertion 🤷🏻.
 
 #+name: list last entries
 #+begin_src sql
-  select * from [Artist] order by [ArtistId] desc limit 5;
-#+end_src
-
-#+begin_src sql
+  sqlite> select * from [Artist] order by [ArtistId] desc limit 5;
   276|Radiohead
   275|Philip Glass Ensemble
   274|Nash Ensemble
@@ -151,8 +149,8 @@ We want to replace an entry from the [Artist] table.
 ** SQL command
 #+name: from Radiohead to DaftPunk
 #+begin_src sql
-  update [Artist] set [Name] = 'Daft Punk' where [Name] = 'Radiohead' -- Doesn't return anything
-  update [Artist] set [Name] = 'Justice' where [Name] = 'Daft Punk' returning * -- returns the updated entry
+  sqlite> update [Artist] set [Name] = 'Daft Punk' where [Name] = 'Radiohead' -- Doesn't return anything
+  sqlite> update [Artist] set [Name] = 'Justice' where [Name] = 'Daft Punk' returning * -- returns the updated entry
 #+end_src
 
 
@@ -173,7 +171,8 @@ Let's remove *Radiohead*.
 ** SQL command
 #+name: remove DaftPunk_
 #+begin_src sql
-  delete from [Artist] where [Name] = 'DaftPunk_' returning *; -- 278|DaftPunk_
+  sqlite> delete from [Artist] where [Name] = 'DaftPunk_' returning *;
+  278|DaftPunk_
 #+end_src
 
 ** Node:sqlite command
@@ -229,62 +228,62 @@ Remove a table
 * Relational data & Join
 The Album table has the following schema:
 #+begin_src sql
-  .schema album
-CREATE TABLE [Album]
-(
-    [AlbumId] INTEGER  NOT NULL,
-    [Title] NVARCHAR(160)  NOT NULL,
-    [ArtistId] INTEGER  NOT NULL,
-    CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId]),
-    FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId])
-		ON DELETE NO ACTION ON UPDATE NO ACTION
+  sqlite> .schema album
+  CREATE TABLE [Album]
+  (
+      [AlbumId] INTEGER  NOT NULL,
+      [Title] NVARCHAR(160)  NOT NULL,
+      [ArtistId] INTEGER  NOT NULL,
+      CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId]),
+      FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId])
+                  ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 CREATE INDEX [IFK_AlbumArtistId] ON [Album] ([ArtistId]);
 #+end_src
 
 The first few rows look like:
 #+begin_src sql
-  select * from [Album] limit 10;
-1|For Those About To Rock We Salute You|1
-2|Balls to the Wall|2
-3|Restless and Wild|2
-4|Let There Be Rock|1
-5|Big Ones|3
-6|Jagged Little Pill|4
-7|Facelift|5
-8|Warner 25 Anos|6
-9|Plays Metallica By Four Cellos|7
-10|Audioslave|8
+  sqlite> select * from [Album] limit 10;
+  1|For Those About To Rock We Salute You|1
+  2|Balls to the Wall|2
+  3|Restless and Wild|2
+  4|Let There Be Rock|1
+  5|Big Ones|3
+  6|Jagged Little Pill|4
+  7|Facelift|5
+  8|Warner 25 Anos|6
+  9|Plays Metallica By Four Cellos|7
+  10|Audioslave|8
 #+end_src
 
 The last number is the [ArtistId], that matches the [Artist] ([ArtistId]).
 To display the [Name] of the artist instead of the ID:
 #+begin_src sql
-  select Album.AlbumId, Album.Title, Artist.Name
-  from [Album] join [Artist] on Album.ArtistId = Artist.ArtistId
-  limit 10;
-1|For Those About To Rock We Salute You|AC/DC
-2|Balls to the Wall|Accept
-3|Restless and Wild|Accept
-4|Let There Be Rock|AC/DC
-5|Big Ones|Aerosmith
-6|Jagged Little Pill|Alanis Morissette
-7|Facelift|Alice In Chains
-8|Warner 25 Anos|Antônio Carlos Jobim
-9|Plays Metallica By Four Cellos|Apocalyptica
-10|Audioslave|Audioslave
+  sqlite> select Album.AlbumId, Album.Title, Artist.Name
+     ...> from [Album] join [Artist] on Album.ArtistId = Artist.ArtistId
+     ...> limit 10;
+  1|For Those About To Rock We Salute You|AC/DC
+  2|Balls to the Wall|Accept
+  3|Restless and Wild|Accept
+  4|Let There Be Rock|AC/DC
+  5|Big Ones|Aerosmith
+  6|Jagged Little Pill|Alanis Morissette
+  7|Facelift|Alice In Chains
+  8|Warner 25 Anos|Antônio Carlos Jobim
+  9|Plays Metallica By Four Cellos|Apocalyptica
+  10|Audioslave|Audioslave
 #+end_src
 
 ** Table alias
 Typing the name of the albums all the time can be cumbersome.
 There different types of alias:
 #+begin_src sql
-  select Alb.AlbumId, Alb.Title, Art.Name as [artName]
-  from [Album] [Alb] join [Artist] [Art] on Alb.ArtistId = Art.ArtistId
-  where [artName] = 'Nirvana'
-  limit 10;
-163|From The Muddy Banks Of The Wishkah [Live]|Nirvana
-164|Nevermind|Nirvana
+  sqlite> select Alb.AlbumId, Alb.Title, Art.Name as [artName]
+     ...> from [Album] [Alb] join [Artist] [Art] on Alb.ArtistId = Art.ArtistId
+     ...> where [artName] = 'Nirvana'
+     ...> limit 10;
+  163|From The Muddy Banks Of The Wishkah [Live]|Nirvana
+  164|Nevermind|Nirvana
 #+end_src
 
 ** Multiple join
@@ -308,30 +307,30 @@ By default this is an *Inner Join*.
 - not in the [Album] table
 
 #+begin_src sql
-  select * from [Artist] where [Name] = 'Snow Patrol';
-172|Snow Patrol
-  select * from [Album] where [ArtistId] = 172;
+  sqlite> select * from [Artist] where [Name] = 'Snow Patrol';
+  172|Snow Patrol
+  sqlite> select * from [Album] where [ArtistId] = 172;
   -- null
 #+end_src
 
 With *INNER JOIN*:
 #+begin_src sql
-  select art.Name as [Name], alb.Title
-  from [Album] [alb]
-  inner join [Artist] [art]
-    on art.ArtistId = alb.ArtistId
-  where [Name] = 'Snow Patrol';
+  sqlite> select art.Name as [Name], alb.Title
+     ...> from [Album] [alb]
+     ...> inner join [Artist] [art]
+     ...>   on art.ArtistId = alb.ArtistId
+     ...> where [Name] = 'Snow Patrol';
   -- null
 #+end_src
 
 Same but *RIGHT JOIN*:
 #+begin_src sql
-  select art.Name as [Name], alb.Title
-  from [Album] [alb]
-  right join [Artist] [art] -- Right Outer Join
-    on art.ArtistId = alb.ArtistId
-  where [Name] = 'Snow Patrol';
-Snow Patrol|                    -- There is an art.Name but no alb.Title
+  sqlite> select art.Name as [Name], alb.Title
+     ...> from [Album] [alb]
+     ...> right join [Artist] [art] -- Right Outer Join
+     ...>   on art.ArtistId = alb.ArtistId
+     ...> where [Name] = 'Snow Patrol';
+  Snow Patrol|                    -- There is an art.Name but no alb.Title
 #+end_src
 
 List all the artists that do not have an album:
@@ -350,34 +349,34 @@ See [[https://www.sqlite.org/foreignkeys.html][SQLite Foreign Key Support]].
 
 Enforce foreign key constraint by typing ~sqlite> pragma foreign_keys = on~
 #+begin_src sql
-  .schema Track
-CREATE TABLE [Track]
-(
-    [TrackId] INTEGER  NOT NULL,
-    [Name] NVARCHAR(200)  NOT NULL,
-    [AlbumId] INTEGER,
-    [MediaTypeId] INTEGER  NOT NULL,
-    [GenreId] INTEGER,
-    [Composer] NVARCHAR(220),
-    [Milliseconds] INTEGER  NOT NULL,
-    [Bytes] INTEGER,
-    [UnitPrice] NUMERIC(10,2)  NOT NULL,
-    CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
-    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
-                ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId])
-                ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId])
-                ON DELETE NO ACTION ON UPDATE NO ACTION
-);
-CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
-CREATE INDEX [IFK_TrackGenreId] ON [Track] ([GenreId]);
-CREATE INDEX [IFK_TrackMediaTypeId] ON [Track] ([MediaTypeId]);
+  sqlite> .schema Track
+  CREATE TABLE [Track]
+  (
+      [TrackId] INTEGER  NOT NULL,
+      [Name] NVARCHAR(200)  NOT NULL,
+      [AlbumId] INTEGER,
+      [MediaTypeId] INTEGER  NOT NULL,
+      [GenreId] INTEGER,
+      [Composer] NVARCHAR(220),
+      [Milliseconds] INTEGER  NOT NULL,
+      [Bytes] INTEGER,
+      [UnitPrice] NUMERIC(10,2)  NOT NULL,
+      CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
+      FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
+                  ON DELETE NO ACTION ON UPDATE NO ACTION,
+      FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId])
+                  ON DELETE NO ACTION ON UPDATE NO ACTION,
+      FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId])
+                  ON DELETE NO ACTION ON UPDATE NO ACTION
+  );
+  CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
+  CREATE INDEX [IFK_TrackGenreId] ON [Track] ([GenreId]);
+  CREATE INDEX [IFK_TrackMediaTypeId] ON [Track] ([MediaTypeId]);
 
-  pragma foreign_keys = on;
-  insert into [Track] ([Name], [AlbumId], [MediaTypeId], [GenreId], [Composer], [Milliseconds], [Bytes], [UnitPrice])
-  values ('lol', 9999, 9999, 9999, 9999, 9999, 9999, 9999);
-Runtime error: FOREIGN KEY constraint failed (19)
+  sqlite> pragma foreign_keys = on;
+  sqlite> insert into [Track] ([Name], [AlbumId], [MediaTypeId], [GenreId], [Composer], [Milliseconds], [Bytes], [UnitPrice])
+     ...> values ('lol', 9999, 9999, 9999, 9999, 9999, 9999, 9999);
+  Runtime error: FOREIGN KEY constraint failed (19)
 #+end_src
 
 *AlbumId* is a foreign key
@@ -411,6 +410,77 @@ To disable the foreign key constraints:
   // To enable it after opening the database:
 const prep = chinookDB.prepare('PRAGMA foreign_keys = ON')
 #+end_src
+
+* Aggregation
+** count and distinct
+#+begin_src sql
+sqlite> select count(*) from [Track];
+3503
+sqlite> select count(distinct [GenreId]) from [Track];
+25 -- There are 25 genres
+-- How many tracks, per genre?
+sqlite> select [GenreId], count([GenreId]) as [Count]
+   ...> from [Track]
+   ...> group by [GenreId]
+   ...> order by [Count] desc;
+1|1297
+7|579
+3|374
+4|332
+2|130
+19|93
+6|81
+24|74
+21|64
+14|61
+8|58
+9|48
+10|43
+23|40
+17|35
+15|30
+13|28
+16|28
+20|26
+12|24
+22|17
+11|15
+18|13
+5|12
+25|1
+-- Name of the genre instead of the Id
+sqlite> select Genre.Name, count(Track.GenreId) as [Count]
+   ...> from [Track]
+   ...> right join [Genre] on Track.GenreId = Genre.GenreId
+   ...> group by Track.GenreId
+   ...> order by [Count] desc;
+Rock|1297
+Latin|579
+Metal|374
+Alternative & Punk|332
+Jazz|130
+TV Shows|93
+Blues|81
+Classical|74
+Drama|64
+R&B/Soul|61
+Reggae|58
+Pop|48
+Soundtrack|43
+Alternative|40
+Hip Hop/Rap|35
+Electronica/Dance|30
+World|28
+Heavy Metal|28
+Sci Fi & Fantasy|26
+Easy Listening|24
+Comedy|17
+Bossa Nova|15
+Science Fiction|13
+Rock And Roll|12
+Opera|1
+#+end_src
+
 * Footnotes
 
 [fn:3]At least for now.
