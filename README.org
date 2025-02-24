@@ -572,8 +572,8 @@ Ideally from a Podman container 😇.
 ** Tasks
 *** DONE I remove the .git files from this repo and integrate into this one.
 *** TODO Create a podman container
-*** TODO Remove dependencies (e.g. no need of nodemon anymore)
-*** TODO Make it strippable Typescript files
+*** DONE Remove dependencies (e.g. no need of nodemon anymore)
+*** DONE Make it strippable Typescript files
 *** TODO Use a compose file instead of huge build script
 *** TODO Adding Node permissions features
 ** Podman container
@@ -584,118 +584,10 @@ To build and run the container with Podman:
   podman run -p 8080:8080 --user 1001 fastify-sqlite-server
 #+end_src
 
-This Containerfile:
-- Uses Node.js 16 Alpine as a lightweight base image
-- Creates and sets up a non-root `node` user for security
-- Properly handles permissions and ownership
-- Copies package files first for efficient caching during rebuilds
-- Installs dependencies before copying the full application code
-- Exposes port 8080
-- Runs the server with node directly (not using nodemon as we're in production)
 ** Development mode
 This is not meant to be pushed in production at all.
 So the work is to make it reproducible (pinned versions).
-
-### **Step 2: Create a `.podmanignore` file**
-
-This file will exclude unnecessary files during the build process:
-
-```text
-node_modules/
-package-lock.json
-coverage/
-dist/
-```
-
----
-
-### **Step 3: Build the image**
-
-Run this command to build your container image:
-
-```bash
-podman build -t fastify-sqlite-server .
-```
-
----
-
-### **Step 4: Run the container for development**
-
-For development, you want:
-- Live reloading with `nodemon`
-- Volume mounts to sync code changes between your host and container
-- Access to debugging tools if needed
-
-Here’s how to run it:
-
-```bash
-podman run -it --rm \
-    -p 8080:8080 \
-    --user 1001 \
-    -v "$(pwd):/app" \
-    fastify-sqlite-server \
-    sh -c "npm run dev"
-```
-
-Assuming your `package.json` has a `"dev"` script like this:
-
-```json
-{
-  "scripts": {
-    "dev": "nodemon server.js"
-  }
-}
-```
-
----
-
-### **Step 5: (Optional) Use a Compose File for Orchestration**
-
-If you prefer using `podman-compose`, create a `podman-compose.yml` file:
-
-```yaml
-version: '3.8'
-
-services:
-  app:
-    build: .
-    ports:
-      - "8080:8080"
-    volumes:
-      - .:/app
-    user: 1001
-    command: sh -c "npm run dev"
-```
-
-Then you can run:
-
-```bash
-podman-compose up
-```
-
----
-
-### **Key Benefits of This Setup**
-
-- **Volume Mounting**: Changes to your local code are immediately reflected in the container.
-- **Live Reloading**: `nodemon` restarts your server when files change.
-- **Consistent Environment**: Same base image and dependencies for both development and production.
-- **Security**: Running as a non-root user even in development.
-
----
-
-### **Step 6: Rebuild the Image When Needed**
-
-If you make changes to your `package.json` or other dependencies, rebuild the image:
-
-```bash
-podman build -t fastify-sqlite-server .
-```
-
----
-
-This setup allows you to work seamlessly between development and production while maintaining consistency in your environment.
-
+Which also mean, there might not need a .podmanignore file.
 
 * Footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
