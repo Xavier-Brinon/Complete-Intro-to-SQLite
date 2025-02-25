@@ -3,18 +3,25 @@
   "version": "1.0.0",
   "main": "server.ts",
   "scripts": {
-    "dev_": "node --permission --allow-fs-read=server.ts --watch server.ts",
-    "dev": "node --watch server.ts"
+    "dev": "node --permission $npm_package_config_permissions --allow-child-process --watch server.ts",
+    "start": "node --permission $npm_package_config_permissions server.ts"
   },
-  "keywords": ["node", "sqlite"],
+  "keywords": [
+    "node",
+    "sqlite"
+  ],
   "author": "Xavier Brinon",
   "license": "ISC",
   "type": "module",
   "description": "Build an app around sqlite using node. Based on the FEM course on Sqlite.",
   "dependencies": {
     "@fastify/static": "^7.0.4",
+    "@types/node": "^22.13.5",
     "fastify": "^4.28.1",
     "handlebars": "^4.7.8",
     "htmx.org": "^1.9.12"
+  },
+  "config": {
+    "permissions": "--allow-fs-read=server.ts --allow-fs-read=node_modules/* --allow-fs-read=invoice-complete.ts --allow-fs-read=invoice.ts  --allow-fs-read=public/ --allow-fs-read=favicon.ico --allow-fs-read=index.html "
   }
 }
