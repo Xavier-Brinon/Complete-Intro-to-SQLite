@@ -53,9 +53,9 @@ export default function registerInvoice(fastify, opts, done) {
     const id: number = Number.parseInt(request.query.id, 10)
     assert.ok(typeof id === 'number', `id should be a number, got ${typeof id}`)
 
-    const prepInvoice = db.prepare('select * from [Invoice] where [InvoiceId] = ?')
+    const prepInvoice = db.prepare('select * from [Invoice] where [InvoiceId] = $id')
     // Could be prepInvoice.get, but I want to check the number or invoices.
-    const allInvoices = prepInvoice.all(id) as Iinvoice[]
+    const allInvoices = prepInvoice.all({ id }) as Iinvoice[]
     assert.ok(
       allInvoices.length <= 1,
       `Invoices should be unique, got ${allInvoices.length} results for Invoice ${id}`)
@@ -86,8 +86,8 @@ from [InvoiceLine]
 join [Track] on InvoiceLine.TrackId = Track.TrackId
 join [Album] on Track.AlbumId = Album.AlbumId
 join [Artist] on Album.ArtistId = Artist.ArtistId
-where InvoiceLine.InvoiceId = ?`)
-    const allInvoiceLines = prepInvoiceLines.all(id) as ITrackInvoiceLine[]
+where InvoiceLine.InvoiceId = $id`)
+    const allInvoiceLines = prepInvoiceLines.all({ id }) as ITrackInvoiceLine[]
     const lines = allInvoiceLines.map(line => {
       const {
         UnitPrice: unitPrice,
