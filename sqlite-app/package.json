@@ -4,6 +4,7 @@
   "main": "server.ts",
   "scripts": {
     "dev": "node --permission $npm_package_config_permissions --allow-child-process --watch server.ts",
+    "appDev": "node --permission $npm_package_config_appPermissions --allow-child-process --watch /app/server.ts",
     "start": "node --permission $npm_package_config_permissions server.ts"
   },
   "keywords": [
@@ -22,6 +23,7 @@
     "htmx.org": "^1.9.12"
   },
   "config": {
-    "permissions": "--allow-fs-read=server.ts --allow-fs-read=node_modules/* --allow-fs-read=invoice-complete.ts --allow-fs-read=invoice.ts  --allow-fs-read=public/ --allow-fs-read=favicon.ico --allow-fs-read=index.html "
+    "permissions": "--allow-fs-read=server.ts --allow-fs-read=node_modules/* --allow-fs-read=invoice-complete.ts --allow-fs-read=invoice.ts  --allow-fs-read=public/ --allow-fs-read=favicon.ico --allow-fs-read=index.html",
+    "appPermissions": "--allow-fs-read=/app/server.ts --allow-fs-read=/app/node_modules/* --allow-fs-read=/app/invoice-complete.ts --allow-fs-read=/app/invoice.ts  --allow-fs-read=/app/public/ --allow-fs-read=/app/favicon.ico --allow-fs-read=/app/index.html"
   }
 }

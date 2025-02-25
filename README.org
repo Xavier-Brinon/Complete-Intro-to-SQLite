@@ -572,23 +572,117 @@ Ideally from a Podman container 😇.
 ** Tasks
 *** DONE I remove the .git files from this repo and integrate into this one.
 *** TODO Create a podman container
+Not happening 😅.
 *** DONE Remove dependencies (e.g. no need of nodemon anymore)
 *** DONE Make it strippable Typescript files
-*** TODO Use a compose file instead of huge build script
-*** TODO Adding Node permissions features
+*** DONE Use a compose file instead of huge build script
+*** DONE Adding Node permissions features
+Works but outside of podman container.
 ** Podman container
-
-To build and run the container with Podman:
-#+begin_src shell
-  podman build -t fastify-sqlite-server .
-  podman run -p 8080:8080 --user 1001 fastify-sqlite-server
+Doesn't work for many reasons:
+- Trying to set up too much stuff with permissions
+- Port transpose doesn't seem to work.
+  Maybe default values not right or podman desktop setting up wrong stuff.
+** Running the App
+I'll keep it simple and not use containers.
+Run with permissions on my local is fine so I'll keep it at that.
+~npm run app~ is good enough.
+** schemas of the tables
+#+begin_src sql
+sqlite> .schema Invoice
+CREATE TABLE [Invoice]
+(
+    [InvoiceId] INTEGER  NOT NULL,
+    [CustomerId] INTEGER  NOT NULL,
+    [InvoiceDate] DATETIME  NOT NULL,
+    [BillingAddress] NVARCHAR(70),
+    [BillingCity] NVARCHAR(40),
+    [BillingState] NVARCHAR(40),
+    [BillingCountry] NVARCHAR(40),
+    [BillingPostalCode] NVARCHAR(10),
+    [Total] NUMERIC(10,2)  NOT NULL,
+    CONSTRAINT [PK_Invoice] PRIMARY KEY  ([InvoiceId]),
+    FOREIGN KEY ([CustomerId]) REFERENCES [Customer] ([CustomerId])
+		ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX [IFK_InvoiceCustomerId] ON [Invoice] ([CustomerId]);
+sqlite> .schema InvoiceLine
+CREATE TABLE [InvoiceLine]
+(
+    [InvoiceLineId] INTEGER  NOT NULL,
+    [InvoiceId] INTEGER  NOT NULL,
+    [TrackId] INTEGER  NOT NULL,
+    [UnitPrice] NUMERIC(10,2)  NOT NULL,
+    [Quantity] INTEGER  NOT NULL,
+    CONSTRAINT [PK_InvoiceLine] PRIMARY KEY  ([InvoiceLineId]),
+    FOREIGN KEY ([InvoiceId]) REFERENCES [Invoice] ([InvoiceId])
+		ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY ([TrackId]) REFERENCES [Track] ([TrackId])
+		ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX [IFK_InvoiceLineInvoiceId] ON [InvoiceLine] ([InvoiceId]);
+CREATE INDEX [IFK_InvoiceLineTrackId] ON [InvoiceLine] ([TrackId]);
 #+end_src
 
-** Development mode
-This is not meant to be pushed in production at all.
-So the work is to make it reproducible (pinned versions).
-Which also mean, there might not need a .podmanignore file.
+Given an =id=, being an =[Invoice]([InvoiceId])=, list the record of that
+invoice along with all the invoice lines attached to that same invoiceId.
+For example, =id= is 10.
+#+name: Invoice No10
+#+begin_src sql
+sqlite> .mode table
+sqlite> select * from [Invoice] where [InvoiceId] = 10;
++-----------+------------+---------------------+------------------+-------------+--------------+----------------+-------------------+-------+
+| InvoiceId | CustomerId |     InvoiceDate     |  BillingAddress  | BillingCity | BillingState | BillingCountry | BillingPostalCode | Total |
++-----------+------------+---------------------+------------------+-------------+--------------+----------------+-------------------+-------+
+| 10        | 46         | 2009-02-03 00:00:00 | 3 Chatham Street | Dublin      | Dublin       | Ireland        |                   | 5.94  |
++-----------+------------+---------------------+------------------+-------------+--------------+----------------+-------------------+-------+
+#+end_src
 
+And now getting the InvoiceLines from the same =InvoiceId=
+#+name: InvoiceLines for InvoideId 10
+#+begin_src sql
+sqlite> select * from [InvoiceLine] where InvoiceLine.InvoiceId = 10;
++---------------+-----------+---------+-----------+----------+
+| InvoiceLineId | InvoiceId | TrackId | UnitPrice | Quantity |
++---------------+-----------+---------+-----------+----------+
+| 45            | 10        | 248     | 0.99      | 1        |
+| 46            | 10        | 252     | 0.99      | 1        |
+| 47            | 10        | 256     | 0.99      | 1        |
+| 48            | 10        | 260     | 0.99      | 1        |
+| 49            | 10        | 264     | 0.99      | 1        |
+| 50            | 10        | 268     | 0.99      | 1        |
++---------------+-----------+---------+-----------+----------+
+#+end_src
+
+Combining with [Track] table
+#+begin_src sql
+sqlite> select * from [InvoiceLine] join [Track] on InvoiceLine.TrackId = Track.TrackId where InvoiceLine.InvoiceId = 10;
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+
+| InvoiceLineId | InvoiceId | TrackId | UnitPrice | Quantity | TrackId |            Name             | AlbumId | MediaTypeId | GenreId |   Composer    | Milliseconds |  Bytes  | UnitPrice |
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+
+| 45            | 10        | 248     | 0.99      | 1        | 248     | Etnia                       | 24      | 1           | 7       | Chico Science | 152555       | 5061413 | 0.99      |
+| 46            | 10        | 252     | 0.99      | 1        | 252     | Samba Do Lado               | 24      | 1           | 7       | Chico Science | 227317       | 7541688 | 0.99      |
+| 47            | 10        | 256     | 0.99      | 1        | 256     | Sobremesa                   | 24      | 1           | 7       | Chico Science | 240091       | 7960868 | 0.99      |
+| 48            | 10        | 260     | 0.99      | 1        | 260     | Sangue De Bairro            | 24      | 1           | 7       | Chico Science | 132231       | 4415557 | 0.99      |
+| 49            | 10        | 264     | 0.99      | 1        | 264     | Amor De Muito               | 24      | 1           | 7       | Chico Science | 175333       | 5881293 | 0.99      |
+| 50            | 10        | 268     | 0.99      | 1        | 268     | Maracatu Atômico [Trip Hop] | 24      | 1           | 7       | Chico Science | 221492       | 7380787 | 0.99      |
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+
+#+end_src
+
+Combining with [Album] table
+#+begin_src sql
+sqlite> select * from [InvoiceLine] join [Track] on InvoiceLine.TrackId = Track.TrackId join [Album] on Track.AlbumId = Album.AlbumId where InvoiceLine.InvoiceId = 10;
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+---------+----------------+----------+
+| InvoiceLineId | InvoiceId | TrackId | UnitPrice | Quantity | TrackId |            Name             | AlbumId | MediaTypeId | GenreId |   Composer    | Milliseconds |  Bytes  | UnitPrice | AlbumId |     Title      | ArtistId |
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+---------+----------------+----------+
+| 45            | 10        | 248     | 0.99      | 1        | 248     | Etnia                       | 24      | 1           | 7       | Chico Science | 152555       | 5061413 | 0.99      | 24      | Afrociberdelia | 18       |
+| 46            | 10        | 252     | 0.99      | 1        | 252     | Samba Do Lado               | 24      | 1           | 7       | Chico Science | 227317       | 7541688 | 0.99      | 24      | Afrociberdelia | 18       |
+| 47            | 10        | 256     | 0.99      | 1        | 256     | Sobremesa                   | 24      | 1           | 7       | Chico Science | 240091       | 7960868 | 0.99      | 24      | Afrociberdelia | 18       |
+| 48            | 10        | 260     | 0.99      | 1        | 260     | Sangue De Bairro            | 24      | 1           | 7       | Chico Science | 132231       | 4415557 | 0.99      | 24      | Afrociberdelia | 18       |
+| 49            | 10        | 264     | 0.99      | 1        | 264     | Amor De Muito               | 24      | 1           | 7       | Chico Science | 175333       | 5881293 | 0.99      | 24      | Afrociberdelia | 18       |
+| 50            | 10        | 268     | 0.99      | 1        | 268     | Maracatu Atômico [Trip Hop] | 24      | 1           | 7       | Chico Science | 221492       | 7380787 | 0.99      | 24      | Afrociberdelia | 18       |
++---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+---------+----------------+----------+
+#+end_src
 * Footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
 I'm only interrested in the *Building an app feature* and don't need to

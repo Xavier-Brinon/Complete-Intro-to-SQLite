@@ -5,4 +5,4 @@ services:
       - 3000:3000
     volumes:
       - .:/app
-    command: sh -c "node --run dev"
+    command: sh -c "node --run appDev"
