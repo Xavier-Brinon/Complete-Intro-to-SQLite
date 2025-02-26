@@ -51,14 +51,26 @@ const db = new DatabaseSync('./data.db')
 export default function registerInvoice(fastify, opts, done) {
   fastify.all('/', (request, reply) => {
     const id: number = Number.parseInt(request.query.id, 10)
+    // assert is a bit brutal, should be removed when in prod
     assert.ok(typeof id === 'number', `id should be a number, got ${typeof id}`)
 
-    const prepInvoice = db.prepare('select * from [Invoice] where [InvoiceId] = $id')
+    const prepInvoice = db.prepare(`
+      select
+        InvoiDate,
+        BillingAddress,
+        BillingCity,
+        BillingState,
+        BillingCountry,
+        BillingPostalCode,
+        Total
+      from [Invoice] where [InvoiceId] = $id
+    `)
     // Could be prepInvoice.get, but I want to check the number or invoices.
     const allInvoices = prepInvoice.all({ id }) as Iinvoice[]
-    assert.ok(
-      allInvoices.length <= 1,
-      `Invoices should be unique, got ${allInvoices.length} results for Invoice ${id}`)
+    if (allInvoices.length > 1) {
+      reply.code(500)
+      reply.send({ error: new Error('Invoice not unique'), errorLocation: 'Invoice' })
+    }
     const {
       InvoiceDate: date,
       BillingAddress: address,
@@ -81,12 +93,18 @@ export default function registerInvoice(fastify, opts, done) {
     }
 
     const prepInvoiceLines = db.prepare(`
-select InvoiceLine.UnitPrice, InvoiceLine.Quantity, Track.Name as TrackName, Album.Title, Artist.Name as ArtistName
-from [InvoiceLine]
-join [Track] on InvoiceLine.TrackId = Track.TrackId
-join [Album] on Track.AlbumId = Album.AlbumId
-join [Artist] on Album.ArtistId = Artist.ArtistId
-where InvoiceLine.InvoiceId = $id`)
+      select
+        InvoiceLine.UnitPrice,
+        InvoiceLine.Quantity,
+        Track.Name as TrackName,
+        Album.Title,
+        Artist.Name as ArtistName
+      from [InvoiceLine]
+      join [Track]       on InvoiceLine.TrackId = Track.TrackId
+      join [Album]       on Track.AlbumId       = Album.AlbumId
+      join [Artist]      on Album.ArtistId      = Artist.ArtistId
+      where InvoiceLine.InvoiceId = $id
+    `)
     const allInvoiceLines = prepInvoiceLines.all({ id }) as ITrackInvoiceLine[]
     const lines = allInvoiceLines.map(line => {
       const {
