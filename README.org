@@ -874,6 +874,7 @@ Ozzy Osbourne|Speak of the Devil|Black Sabbath
 Amy Winehouse|Back to Black|Back to Black
 #+end_src
 
+* Full Text Search
 ℹ️ ~FTS~ is searching in the ~Virtual~ table and returns the rowId that matches.
 In then returns the rows in the real table. If the real table is modified, the
 two tables are out of sync. The FTS search will match the text available at the
@@ -883,6 +884,8 @@ So you look for something, find an old match, but still return a new value.
 Remember to sync the virtual tables if one of the columns is being impacted by
 an update.
 ⚠️ ~FTS~ is not available in the builtin ~node:sqlite~ module...yet 😥.
+But it is loadable as an extension if build following this [[https://www.sqlite.org/fts5.html][process]].
+** Obtain the latest SQLite
 * footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
 I'm only interrested in the *Building an app feature* and don't need to

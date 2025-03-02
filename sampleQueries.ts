@@ -206,7 +206,9 @@ export const fullTextSearch = ({ search } : { search: string }) => {
   assert.ok(typeof search === 'string', `The search text should be a string, got ${typeof search}`)
   assert.ok(search !== '', 'Search text is empty')
 
-  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite', {
+    allowExtension: true
+  })
   // Create the view with the right data
   const prepCreateView = chinookDB.prepare(`
     create view View_Tracks as
