@@ -35,4 +35,3 @@ fi
 
 # Cleanup the source files
 rm -rf sqlite SQLite-trunk.tgz
-q

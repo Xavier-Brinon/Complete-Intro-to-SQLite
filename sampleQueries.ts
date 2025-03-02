@@ -209,6 +209,8 @@ export const fullTextSearch = ({ search } : { search: string }) => {
   const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite', {
     allowExtension: true
   })
+  chinookDB.loadExtension('./sqlite-fts5/fts5.dylib')
+
   // Create the view with the right data
   const prepCreateView = chinookDB.prepare(`
     create view View_Tracks as
@@ -227,7 +229,7 @@ export const fullTextSearch = ({ search } : { search: string }) => {
   // Create the virtual table where the Full Text Search will be executed.
   const prepCreateVirtual = chinookDB.prepare(`
     create virtual table FTS_Track
-    using FTS5(content='View_Tracks', content_rowid='TrackId', ArtistName, AlbumTitle, TrackName)
+    using fts5(content='View_Tracks', content_rowid='TrackId', ArtistName, AlbumTitle, TrackName)
   `)
   const runCreateVirtual = prepCreateVirtual.run()
   console.debug('Create the Virtual table:', runCreateVirtual)
@@ -241,6 +243,10 @@ export const fullTextSearch = ({ search } : { search: string }) => {
   `)
   const runFillVirtual = prepFillVirtual.run()
   console.debug('Fill virtual table:', runFillVirtual)
+
+  const prepFullTextSearch = chinookDB.prepare('select * from FTS_Track where FTS_Track match \'black\'')
+  const runPrepFullTextSearch = prepFullTextSearch.all()
+  console.log('FTS:', runPrepFullTextSearch)
 
   chinookDB.close()
 }

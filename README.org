@@ -884,8 +884,24 @@ So you look for something, find an old match, but still return a new value.
 Remember to sync the virtual tables if one of the columns is being impacted by
 an update.
 ⚠️ ~FTS~ is not available in the builtin ~node:sqlite~ module...yet 😥.
-But it is loadable as an extension if build following this [[https://www.sqlite.org/fts5.html][process]].
-** Obtain the latest SQLite
+But it is loadable as an extension if build following this [[https://www.sqlite.org/fts5.html#building_a_loadable_extension][process]].
+And for [[https://www.sqlite.org/loadext.html#build][compiling a loadable extension]].
+
+** FTS as loadable extension
+Following [[https://nodejs.org/docs/latest/api/sqlite.html#databaseloadextensionpath][loadExtension]] function,
+Once you have the ~fts4.dylib~ file, DataSync the database with the option
+=allowExtension= set to true.
+Then you can load FTS5 like any package.
+#+begin_src javascript
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite', {
+    allowExtension: true
+  })
+  chinookDB.loadExtension('./sqlite-fts5/fts5.dylib')
+#+end_src
+
+☢️
+Loading SQLite extensions in not possible when the permissions are enabled.
+
 * footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
 I'm only interrested in the *Building an app feature* and don't need to

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node --permission --allow-fs-read=index.ts --allow-fs-read=inMemory.ts --allow-fs-read=sampleQueries.ts index.ts"
+    "start": "node --permission --allow-fs-read=index.ts --allow-fs-read=inMemory.ts --allow-fs-read=sampleQueries.ts index.ts",
+    "dev": "node index.ts"
   },
   "repository": {
     "type": "git",
