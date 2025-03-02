@@ -201,3 +201,44 @@ export const addTrack = ({
     chinookDB.close()
   }
 }
+
+export const fullTextSearch = ({ search } : { search: string }) => {
+  assert.ok(typeof search === 'string', `The search text should be a string, got ${typeof search}`)
+  assert.ok(search !== '', 'Search text is empty')
+
+  const chinookDB = new DatabaseSync('./Chinook_Sqlite.sqlite')
+  // Create the view with the right data
+  const prepCreateView = chinookDB.prepare(`
+    create view View_Tracks as
+    select
+      Track.TrackId as TrackId,
+      Artist.Name as ArtistName,
+      Album.Title as AlbumTitle,
+      Track.Name as TrackName
+    from [Track]
+    join [Album]  on Track.AlbumId  = Album.AlbumId
+    join [Artist] on Album.ArtistId = Artist.ArtistId
+    `)
+  const runCreateView = prepCreateView.run()
+  console.debug('Create the View:', runCreateView)
+
+  // Create the virtual table where the Full Text Search will be executed.
+  const prepCreateVirtual = chinookDB.prepare(`
+    create virtual table FTS_Track
+    using FTS5(content='View_Tracks', content_rowid='TrackId', ArtistName, AlbumTitle, TrackName)
+  `)
+  const runCreateVirtual = prepCreateVirtual.run()
+  console.debug('Create the Virtual table:', runCreateVirtual)
+
+  // Fill in the virtual table
+  const prepFillVirtual = chinookDB.prepare(`
+    insert into FTS_Track
+    select TrackId, ArtistName, AlbumTitle
+    from View_Tracks
+    returning *
+  `)
+  const runFillVirtual = prepFillVirtual.run()
+  console.debug('Fill virtual table:', runFillVirtual)
+
+  chinookDB.close()
+}

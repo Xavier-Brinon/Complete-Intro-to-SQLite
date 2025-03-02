@@ -683,11 +683,210 @@ sqlite> select * from [InvoiceLine] join [Track] on InvoiceLine.TrackId = Track.
 | 50            | 10        | 268     | 0.99      | 1        | 268     | Maracatu Atômico [Trip Hop] | 24      | 1           | 7       | Chico Science | 221492       | 7380787 | 0.99      | 24      | Afrociberdelia | 18       |
 +---------------+-----------+---------+-----------+----------+---------+-----------------------------+---------+-------------+---------+---------------+--------------+---------+-----------+---------+----------------+----------+
 #+end_src
-* Footnotes
+* Views
+A request that combines multiple tables can come up very frequently.
+E.g. listing the name of the artist with the title of a song and the album.
+That would be 3 tables very frequently joined. The idea of views is to create
+a virtual table that combines those tables and make request on that view
+directly.
+#+name: Select on multiple table
+#+begin_src sql
+  select
+    Track.TrackId as TrackId,
+    Artist.Name as ArtistName,
+    Album.Title as AlbumTitle,
+    Track.Name as TrackName
+  from [Track]
+  join [Album]  on Track.AlbumId   = Album.AlbumId
+  join [Artist] on Artist.ArtistId = Album.ArtistId
+  limit 5;
+1|AC/DC|For Those About To Rock We Salute You|For Those About To Rock (We Salute You)
+2|Accept|Balls to the Wall|Balls to the Wall
+3|Accept|Restless and Wild|Fast As a Shark
+4|Accept|Restless and Wild|Restless and Wild
+5|Accept|Restless and Wild|Princess of the Dawn
+#+end_src
+
+#+name: creating the table
+#+begin_src sql
+  create view easy_tracks as
+  select
+    Track.TrackId as TrackId,
+    Artist.Name as ArtistName,
+    Album.Title as AlbumTitle,
+    Track.Name as TrackName
+  from [Track]
+  join [Album]  on Track.AlbumId   = Album.AlbumId
+  join [Artist] on Artist.ArtistId = Album.ArtistId;
+#+end_src
+
+#+name: request on views
+#+begin_src sql
+  select * from easy_tracks
+  limit 10;
+1|AC/DC|For Those About To Rock We Salute You|For Those About To Rock (We Salute You)
+2|Accept|Balls to the Wall|Balls to the Wall
+3|Accept|Restless and Wild|Fast As a Shark
+4|Accept|Restless and Wild|Restless and Wild
+5|Accept|Restless and Wild|Princess of the Dawn
+6|AC/DC|For Those About To Rock We Salute You|Put The Finger On You
+7|AC/DC|For Those About To Rock We Salute You|Let's Get It Up
+8|AC/DC|For Those About To Rock We Salute You|Inject The Venom
+9|AC/DC|For Those About To Rock We Salute You|Snowballed
+10|AC/DC|For Those About To Rock We Salute You|Evil Walks
+#+end_src
+
+⚠️ Every request on a views runs the whole join used to create the view.
+A view as a real table is called a *materialised* view.
+⚠️ You cannot write in a view.
+* Indexes
+To view the indexes for a specific table, use ~index_list~
+#+begin_src sql
+sqlite> pragma index_list('Track');
+0|IFK_TrackMediaTypeId|0|c|0
+1|IFK_TrackGenreId|0|c|0
+2|IFK_TrackAlbumId|0|c|0
+#+end_src
+
+They're the foreign keys:
+#+begin_src sql
+sqlite> .schema Track
+CREATE TABLE [Track]
+(
+    [TrackId] INTEGER  NOT NULL,
+    [Name] NVARCHAR(200)  NOT NULL,
+    [AlbumId] INTEGER,
+    [MediaTypeId] INTEGER  NOT NULL,
+    [GenreId] INTEGER,
+    [Composer] NVARCHAR(220),
+    [Milliseconds] INTEGER  NOT NULL,
+    [Bytes] INTEGER,
+    [UnitPrice] NUMERIC(10,2)  NOT NULL,
+    CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
+    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId]) 
+		ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId]) 
+		ON DELETE NO ACTION ON UPDATE NO ACTION,
+    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId]) 
+		ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+CREATE INDEX [IFK_TrackAlbumId] ON [Track] ([AlbumId]);
+CREATE INDEX [IFK_TrackGenreId] ON [Track] ([GenreId]);
+CREATE INDEX [IFK_TrackMediaTypeId] ON [Track] ([MediaTypeId]);
+#+end_src
+
+Let's create an index on the Name column of the table Track
+#+begin_src sql
+sqlite> create index idx_track_name on Track (Name);
+sqlite> pragma index_list('Track');
+0|idx_track_name|0|c|0
+1|IFK_TrackMediaTypeId|0|c|0
+2|IFK_TrackGenreId|0|c|0
+3|IFK_TrackAlbumId|0|c|0
+
+sqlite> explain query plan
+   ...> select * from Track
+   ...> where name = 'Black Dog';
+QUERY PLAN
+`--SEARCH Track USING INDEX idx_track_name (Name=?)
+#+end_src
+
+Index is the different values of that columns in a B-Tree.
+The search happens in the tree first and gives pointers to the rows in the table
+with that value. Then the rest of the operations can be performed in that table.
+* Full Text Search
+There's a pluging called ~Full Text Search, version 5 (FTS5)~ that does exactly
+what's in the tin.
+
+#+begin_src sql
+sqlite> .tables
+Album          Employee       InvoiceLine    PlaylistTrack
+Artist         Genre          MediaType      Track        
+Customer       Invoice        Playlist       easy_tracks  
+sqlite> .schema easy_tracks
+CREATE VIEW easy_tracks as
+  select
+    Track.TrackId as TrackId,
+    Artist.Name as ArtistName,
+    Album.Title as AlbumTitle,
+    Track.Name as TrackName
+  from [Track]
+  join [Album]  on Track.AlbumId   = Album.AlbumId
+  join [Artist] on Artist.ArtistId = Album.ArtistId
+/* easy_tracks(TrackId,ArtistName,AlbumTitle,TrackName) */;
+sqlite> create virtual table track_search
+   ...> using FTS5(content='easy_tracks', content_rowid='TrackId', ArtistName, AlbumTitle, TrackName);
+sqlite> .tables
+.tables
+Album                 InvoiceLine           track_search        
+Artist                MediaType             track_search_config 
+Customer              Playlist              track_search_data   
+Employee              PlaylistTrack         track_search_docsize
+Genre                 Track                 track_search_idx    
+Invoice               easy_tracks         
+#+end_src
+The FTS includes the 3 columns ~ArtistName, AlbumTitle, and TrackName~,
+
+The *virtual* table is created empty. Don't forget to fill it in!
+#+begin_src sql
+sqlite> select * from track_search where track_search match 'black';
+-- The virtual table is empty!
+sqlite> insert into track_search
+   ...> select TrackId, ArtistName, TrackName
+   ...> from easy_tracks;
+-- And now it works.
+sqlite> select * from track_search where track_search match 'black';
+Black Label Society|Alcohol Fueled Brewtality Live! [Disc 1]|Intro/ Low Down
+Black Label Society|Alcohol Fueled Brewtality Live! [Disc 1]|13 Years Of Grief
+Black Label Society|Alcohol Fueled Brewtality Live! [Disc 1]|Stronger Than Death
+Black Sabbath|Black Sabbath|N.I.B.
+Black Sabbath|Black Sabbath|Evil Woman
+Black Sabbath|Black Sabbath|Sleeping Village
+Black Sabbath|Black Sabbath Vol. 4 (Remaster)|Changes
+Black Sabbath|Black Sabbath Vol. 4 (Remaster)|FX
+Black Sabbath|Black Sabbath Vol. 4 (Remaster)|Supernaut
+Led Zeppelin|BBC Sessions [Disc 1] [Live]|The Girl I Love She Got Long Black Wavy Hair
+Kiss|Greatest Kiss|Black Diamond
+Miles Davis|The Essential Miles Davis [Disc 2]|Black Satin
+Deep Purple|Knocking at Your Back Door: The Best Of Deep Purple in the 80s|Black Night
+Foo Fighters|In Your Honor [Disc 1]|The Deepest Blues Are Black
+Incognito|Blue Moods|She Wears Black
+James Brown|Sex Machine|Say It Loud, I'm Black And I'm Proud Pt.1
+Jamiroquai|Synkronized|Black Capricorn Day
+Led Zeppelin|BBC Sessions [Disc 2] [Live]|Black Dog
+Led Zeppelin|IV|Black Dog
+Led Zeppelin|Led Zeppelin I|Black Mountain Side
+Led Zeppelin|Physical Graffiti [Disc 2]|Black Country Woman
+Lenny Kravitz|Greatest Hits|Black Velveteen
+Metallica|Ride The Lightning|Fade To Black
+Pearl Jam|Live On Two Legs [Live]|Black
+Pearl Jam|Ten|Black
+Soundgarden|A-Sides|Black Hole Sun
+Soundgarden|A-Sides|Fell On Black Days
+Terry Bozzio, Tony Levin & Steve Stevens|[1997] Black Light Syndrome|Black Light Syndrome
+The Black Crowes|Live [Disc 1]|Midnight From The Inside Out
+The Black Crowes|Live [Disc 1]|Sting Me
+The Black Crowes|Live [Disc 1]|Thick & Thin
+The Black Crowes|Live [Disc 1]|Greasy Grass River
+The Rolling Stones|Hot Rocks, 1964-1971 (Disc 1)|Paint It Black
+The Tea Party|Tangents|Paint It Black
+Ozzy Osbourne|Speak of the Devil|Black Sabbath
+Amy Winehouse|Back to Black|Back to Black
+#+end_src
+
+ℹ️ ~FTS~ is searching in the ~Virtual~ table and returns the rowId that matches.
+In then returns the rows in the real table. If the real table is modified, the
+two tables are out of sync. The FTS search will match the text available at the
+time of creation of the virtual table, but since it returns the rowId, the real
+table will return the new values.
+So you look for something, find an old match, but still return a new value.
+Remember to sync the virtual tables if one of the columns is being impacted by
+an update.
+⚠️ ~FTS~ is not available in the builtin ~node:sqlite~ module...yet 😥.
+* footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
 I'm only interrested in the *Building an app feature* and don't need to
 do a full review of SQL statements building blocks.
-
 [fn:3]At least for now.
 [fn:2]It seems there is a convention to put col names and table names
 between square brackets.
