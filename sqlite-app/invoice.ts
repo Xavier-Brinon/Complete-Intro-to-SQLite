@@ -56,7 +56,7 @@ export default function registerInvoice(fastify, opts, done) {
 
     const prepInvoice = db.prepare(`
       select
-        InvoiDate,
+        InvoiceDate,
         BillingAddress,
         BillingCity,
         BillingState,
@@ -65,6 +65,7 @@ export default function registerInvoice(fastify, opts, done) {
         Total
       from [Invoice] where [InvoiceId] = $id
     `)
+
     // Could be prepInvoice.get, but I want to check the number or invoices.
     const allInvoices = prepInvoice.all({ id }) as Iinvoice[]
     if (allInvoices.length > 1) {
