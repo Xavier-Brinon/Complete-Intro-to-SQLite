@@ -874,7 +874,6 @@ Ozzy Osbourne|Speak of the Devil|Black Sabbath
 Amy Winehouse|Back to Black|Back to Black
 #+end_src
 
-* Full Text Search
 ℹ️ ~FTS~ is searching in the ~Virtual~ table and returns the rowId that matches.
 In then returns the rows in the real table. If the real table is modified, the
 two tables are out of sync. The FTS search will match the text available at the
@@ -883,6 +882,7 @@ table will return the new values.
 So you look for something, find an old match, but still return a new value.
 Remember to sync the virtual tables if one of the columns is being impacted by
 an update.
+** FTS5 with node:sqlite
 ⚠️ ~FTS~ is not available in the builtin ~node:sqlite~ module...yet 😥.
 But it is loadable as an extension if build following this [[https://www.sqlite.org/fts5.html#building_a_loadable_extension][process]].
 And for [[https://www.sqlite.org/loadext.html#build][compiling a loadable extension]].
@@ -901,6 +901,107 @@ Then you can load FTS5 like any package.
 
 ☢️
 Loading SQLite extensions in not possible when the permissions are enabled.
+
+* Working with JSON
+Working with the package [[https://sqlite.org/json1.html][json1]].
+Load the package in *sqlite3* REPL and call the ~json()~ function:
+
+#+begin_src sql
+sqlite> .load /Users/xavierbrinon/Documents/SQLite/Complete-Intro-to-SQLite/sqlite-json1/json1
+sqlite> select json('{"username": "xbrinon", "favourites": ["Daft Punk", "Radiohead"]}');
+{"username":"xbrinon","favourites":["Daft Punk","Radiohead"]}
+sqlite> select json_array(1, 2, 3, 4);
+[1,2,3,4]
+#+end_src
+
+
+** Accessors
+If I want to access a value from a specific fields in the JSON from sqlite: 'json -> json'
+#+begin_src sql
+sqlite> select json('{"username": "xbrinon", "favourites": ["Daft Punk", "Radiohead"]}') -> 'username';
+"xbrinon"
+#+end_src
+
+~"xbrinon"~ here is a JSON object of a string.
+To get the value, ~xbrinon~, there is '->>'
+#+begin_src sql
+sqlite> select json('{"username": "xbrinon", "favourites": ["Daft Punk", "Radiohead"]}') ->> 'username';
+xbrinon
+#+end_src
+
+** Binary JSON
+To store efficiently JSONs, use the binary format; more efficient but not human
+readable.
+#+begin_src sql
+sqlite> select json('{"username": "xbrinon", "favourites": ["Daft Punk", "Radiohead"]}');
+{"username":"xbrinon","favourites":["Daft Punk","Radiohead"]}
+sqlite> select jsonb('{"username": "xbrinon", "favourites": ["Daft Punk", "Radiohead"]}');
+?2?usernamewxbrinon?favourites??Daft Punk?Radiohead
+#+end_src
+
+JSONB is more efficient in a closed loop system but inserting and using JSON
+from outside *sqlite* use ~json()~
+
+** Operations
+You let *sqlite* do the queries, destructuring, and construct.
+#+begin_src sql
+sqlite> CREATE TABLE users (email, data);
+
+INSERT INTO
+  users
+  (email, data)
+VALUES
+  ('brian@example.com', jsonb('{"favorites":["Daft Punk", "Radiohead"], "name": {"first": "Brian", "last": "Holt"}}')),
+  ('bob@example.com', jsonb('{"favorites":["Daft Punk"], "name": {"first": "Bob", "last": "Smith"}}')),
+  ('alice@example.com', jsonb('{"admin": true, "favorites":["The Beatles", "Queen"], "name": {"first": "Alice", "last": "Johnson"}}')),
+  ('charlie@example.com', jsonb('{"favorites":["Nirvana", "Pearl Jam"], "name": {"first": "Charlie", "last": "Brown"}}')),
+  ('dave@example.com', jsonb('{"favorites":["Pink Floyd", "Led Zeppelin"], "name": {"first": "Dave", "last": "Wilson"}}')),
+  ('eve@example.com', jsonb('{"favorites":["Madonna", "Michael Jackson"], "name": {"first": "Eve", "last": "Davis"}}')),
+  ('frank@example.com', jsonb('{"favorites":["Queen", "David Bowie"], "name": {"first": "Frank", "last": "Miller"}}')),
+  ('grace@example.com', jsonb('{"favorites":["Radiohead", "Led Zeppelin"], "name": {"first": "Grace", "last": "Lee"}}')),
+  ('hank@example.com', jsonb('{"favorites":["U2", "Radiohead"], "name": {"first": "Hank", "last": "Taylor"}}')),
+  ('ivy@example.com', jsonb('{"favorites":["Adele", "Beyoncé"], "name": {"first": "Ivy", "last": "Anderson"}}')),
+  ('jack@example.com', jsonb('{"favorites":["Radiohead", "Muse"], "name": {"first": "Jack", "last": "Thomas"}}')),
+  ('kate@example.com', jsonb('{"favorites":["Taylor Swift", "Madonna"], "name": {"first": "Kate", "last": "Martinez"}}')),
+  ('leo@example.com', jsonb('{"favorites":["Nirvana", "Daft Punk"], "name": {"first": "Leo", "last": "Garcia"}}'));
+sqlite> .tables
+Album          Employee       InvoiceLine    PlaylistTrack
+Artist         Genre          MediaType      Track        
+Customer       Invoice        Playlist       users        
+sqlite> .schema users
+CREATE TABLE users (email, data);
+sqlite> select data from users;
+?=?favorites??Daft Punk?RadioheadGname?WfirstWBrianGlastGHolt
+?1?favorites??Daft PunkGname?Wfirst7BobGlastWSmith
+?EWadmin?favorites??The BeatlesWQueenGname?WfirstWAliceGlastwJohnson
+?>?favorites?wNirvana?Pearl JamGname?WfirstwCharlieGlastWBrown
+?C?favorites??Pink Floyd?
+                         Led ZeppelinGname?WfirstGDaveGlastgWilson
+?A?favorites?wMadonna?Michael JacksonGname?Wfirst7EveGlastWDavis
+?=?favorites?WQueen?David BowieGname?WfirstWFrankGlastgMiller
+?@?favorites??Radiohead?
+                        Led ZeppelinGname?WfirstWGraceGlast7Lee
+'U2?RadioheadGname?WfirstGHankGlastgTaylor
+?:?favorites?WAdele?BeyoncéGname?Wfirst7IvyGlast?Anderson
+?9?favorites??RadioheadGMuseGname?WfirstGJackGlastgThomas
+?B?favorites??
+              Taylor SwiftwMadonnaGname?WfirstGKateGlast?Martinez
+?;?favorites?wNirvana?Daft PunkGname?Wfirst7LeoGlastgGarcia
+sqlite> SELECT data -> 'name' ->> 'first', data -> 'name' ->> 'last' FROM users;
+Brian|Holt
+Bob|Smith
+Alice|Johnson
+Charlie|Brown
+Dave|Wilson
+Eve|Davis
+Frank|Miller
+Grace|Lee
+Hank|Taylor
+Ivy|Anderson
+Jack|Thomas
+Kate|Martinez
+Leo|Garcia
+#+end_src
 
 * footnotes
 [fn:4]Maybe see the PlanetScale course or any other SQL course an the grammar.
