@@ -1001,6 +1001,54 @@ Ivy|Anderson
 Jack|Thomas
 Kate|Martinez
 Leo|Garcia
+sqlite> SELECT data -> 'name' ->> 'first', data -> 'name' ->> 'last' FROM users WHERE json_array_length(data, '$.favorites') < 2;
+Bob|Smith
+#+end_src
+
+
+** Adding to a jsonb table
+What are Brian's favs?
+#+begin_src sql
+sqlite> select data ->> 'favorites' from users where email = 'brian@example.com';
+["Daft Punk","Radiohead"]
+#+end_src
+
+Now, let's add 'The XX' as new favorite.
+#+begin_src sql
+sqlite> update users
+   ...> set data = jsonb_insert(
+(x1...>   (select data from users where email = 'brian@example.com'),
+(x1...>   '$.favorites[#]',
+(x1...>   'The XX'
+(x1...>   )
+   ...> where email = 'brian@example.com';
+sqlite> select data ->> 'favorites' from users where email = 'brian@example.com';
+["Daft Punk","Radiohead","The XX"]
+#+end_src
+
+** Complex query
+What is the most favourited band?
+#+begin_src sql
+select count(Favorites.value) as count, Favorites.value
+from users, json_each(data ->> 'favorites') as Favorites
+group by Favorites.value
+order by count desc;
+4|Radiohead
+3|Daft Punk
+2|Queen
+2|Nirvana
+2|Madonna
+2|Led Zeppelin
+1|U2
+1|The Beatles
+1|Taylor Swift
+1|Pink Floyd
+1|Pearl Jam
+1|Muse
+1|Michael Jackson
+1|David Bowie
+1|Beyoncé
+1|Adele
 #+end_src
 
 * footnotes
